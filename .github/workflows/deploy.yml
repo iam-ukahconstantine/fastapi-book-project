@@ -1,0 +1,30 @@
+# Configure GitHub Actions to deploy the application to an AWS EC2 instance upon merging a pull request to the main branch
+name: Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t fastapi-app .
+
+      - name: Deploy to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            docker-compose down
+            docker-compose up -d
+          EOF
