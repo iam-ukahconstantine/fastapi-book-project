@@ -1,0 +1,23 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into AWS Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu
+            docker pull your-dockerhub-username/fastapi-app:latest
+            docker stop fastapi-container || true
+            docker rm fastapi-container || true
+            docker run -d --name fastapi-container -p 8000:8000 fastapi-app
