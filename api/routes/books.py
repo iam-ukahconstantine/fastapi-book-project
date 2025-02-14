@@ -32,7 +32,6 @@ db.books = {
     ),
 }
 
-
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_book(book: Book):
     db.add_book(book)
@@ -40,7 +39,25 @@ async def create_book(book: Book):
         status_code=status.HTTP_201_CREATED, content=book.model_dump()
     )
 
+@router.get("/", response_model=Dict[int, Book], status_code=status.HTTP_200_OK)
+async def get_books() -> Dict[int, Book]:
+    return db.get_books()
 
+@router.put("/{book_id}", response_model=Book, status_code=status.HTTP_200_OK)
+async def update_book(book_id: int, book: Book) -> Book:
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=db.update_book(book_id, book).model_dump(),
+    )
 
+@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_book(book_id: int) -> None:
+    db.delete_book(book_id)
+    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
 
-
+# ✅ Corrected missing endpoint
+@router.get("/{book_id}", response_model=Book, status_code=status.HTTP_200_OK)
+async def get_book_by_id(book_id: int):
+    if book_id in db.books:
+        return db.books[book_id]
+    raise HTTPException(status_code=404, detail="Book not found")
